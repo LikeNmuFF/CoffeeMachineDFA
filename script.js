@@ -804,7 +804,7 @@ function runAutoDemo() {
         const steps = [
             { action: () => insertCoin(5), delay: 1000 },
             { action: () => insertCoin(10), delay: 1500 },
-            { action: () => insertCoin(5), delay: 2000 },
+            { action: () => insertCoin(10), delay: 2000 },
             { action: () => {
                 selectedCoffee = 'latte';
                 coffeePrice = 25;
