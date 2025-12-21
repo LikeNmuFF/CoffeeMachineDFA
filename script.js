@@ -363,52 +363,46 @@ function animateBrewing() {
 // ===============================
 // USER ACTIONS
 // ===============================
-function startProcess() {
-    // For vendo, start means we're ready to accept coins (already in q0)
-    showMessage('Insert coins to begin');
-}
-
-function selectCoffee() {
-    if (!selectedCoffee) {
-        showError('Please select a coffee type first!');
-        return;
-    }
-    
-    if (totalMoney < coffeePrice) {
-        showError(`Insufficient funds. Need ₱${coffeePrice}, have ₱${totalMoney}`);
-        return;
-    }
-    
-    if (transition('SELECT')) {
-        showMessage(`Selected: ${coffeeTypes[selectedCoffee].name} (₱${coffeePrice})`);
-        animateButton('selectBtn');
-    }
-}
-
-function startBrewing() {
-    if (transition('BREW')) {
-        showMessage(`Brewing ${selectedCoffee ? coffeeTypes[selectedCoffee].name : 'coffee'}...`);
-        animateButton('brewBtn');
+function handleCupClick() {
+    // Only allow collection when coffee is ready (q3)
+    if (currentState === 'q3' && document.getElementById('coffeeLiquid').style.height === '100%') {
+        collectCoffee();
+    } else if (currentState !== 'q3') {
+        showError('Coffee is not ready yet. Please select and wait for brewing.');
     }
 }
 
 function collectCoffee() {
     if (transition('COLLECT')) {
         showMessage('Coffee collected. Enjoy! ☕');
-        animateButton('doneBtn');
         
         // Animate cup collection
         const cup = document.getElementById('coffeeCup');
-        cup.classList.add('collected');
+        const liquid = document.getElementById('coffeeLiquid');
         
-        // Reset after animation
+        // Animate cup sliding away and disappearing
+        cup.style.transition = 'all 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+        cup.style.transform = 'translateY(200px) rotate(15deg)';
+        cup.style.opacity = '0';
+        
+        // After cup disappears, reset and bring back clean cup
         setTimeout(() => {
-            cup.classList.remove('collected');
-            document.getElementById('coffeeLiquid').style.height = '0%';
-            coffeesMade++;
-            selectedCoffee = null;
-            resetCoffeeSelection();
-            updateStatistics();
+            // Reset cup position and appearance
+            cup.style.transition = 'none';
+            cup.style.transform = 'translateY(0)';
+            cup.style.opacity = '0';
+            liquid.style.height = '0%';
+            
+            // Wait a moment then slide in clean cup
+            setTimeout(() => {
+                cup.style.transition = 'all 1s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                cup.style.opacity = '1';
+                coffeesMade++;
+                selectedCoffee = null;
+                resetCoffeeSelection();
+                updateStatistics();
+                showMessage('Ready for next order!');
+            }, 300);
         }, 1500);
     }
 }
@@ -468,13 +462,27 @@ function setupCoffeeSelection() {
             selectedCoffee = this.dataset.type;
             coffeePrice = parseInt(this.dataset.price);
             
-            // Enable select button if enough money
-            document.getElementById('selectBtn').disabled = !(totalMoney >= coffeePrice);
-            
             // Animate selection
             this.style.animation = 'selectedBounce 0.6s ease';
             
+            // Check if enough money
+            if (totalMoney < coffeePrice) {
+                showError(`Insufficient funds. Need ₱${coffeePrice}, have ₱${totalMoney}`);
+                return;
+            }
+            
             showMessage(`Selected ${coffeeTypes[selectedCoffee].name} - ₱${coffeePrice}`);
+            
+            // Auto-transition to SELECT (q1 -> q2)
+            setTimeout(() => {
+                if (transition('SELECT')) {
+                    // Auto-transition to BREW (q2 -> q3)
+                    setTimeout(() => {
+                        transition('BREW');
+                        showMessage('Click the coffee cup to collect! ☕');
+                    }, 500);
+                }
+            }, 600);
         });
     });
 }
@@ -489,9 +497,9 @@ function setupDFATable() {
             if (this.textContent !== '—' && currentState === fromState) {
                 // Trigger the transition
                 if (input === 'INSERT_COIN') insertCoin(5); // Default 5 peso coin
-                else if (input === 'SELECT') selectCoffee();
-                else if (input === 'BREW') startBrewing();
-                else if (input === 'COLLECT') collectCoffee();
+                else if (input === 'SELECT') transition('SELECT');
+                else if (input === 'BREW') transition('BREW');
+                else if (input === 'COLLECT') handleCupClick();
                 else if (input === 'RETURN') returnChange();
             }
         });
@@ -507,16 +515,8 @@ function updateDisplay() {
 
 function updateButtonStates() {
     // Enable/disable buttons based on current state and money
-    const startBtn = document.getElementById('startBtn');
-    const selectBtn = document.getElementById('selectBtn');
-    const brewBtn = document.getElementById('brewBtn');
-    const doneBtn = document.getElementById('doneBtn');
     const changeBtn = document.getElementById('changeBtn');
     
-    startBtn.disabled = (currentState !== 'q0');
-    selectBtn.disabled = (currentState !== 'q1' || !selectedCoffee || totalMoney < coffeePrice);
-    brewBtn.disabled = (currentState !== 'q2');
-    doneBtn.disabled = (currentState !== 'q3');
     changeBtn.disabled = (totalMoney === 0);
 }
 
@@ -525,7 +525,6 @@ function resetCoffeeSelection() {
         opt.classList.remove('selected');
         opt.style.animation = '';
     });
-    document.getElementById('selectBtn').disabled = true;
 }
 
 function updateStatistics() {
@@ -806,14 +805,10 @@ function runAutoDemo() {
             { action: () => insertCoin(10), delay: 1500 },
             { action: () => insertCoin(10), delay: 2000 },
             { action: () => {
-                selectedCoffee = 'latte';
-                coffeePrice = 25;
-                document.querySelector('.coffee-option[data-type="latte"]').classList.add('selected');
-                document.getElementById('selectBtn').disabled = false;
+                const latteOption = document.querySelector('.coffee-option[data-type="latte"]');
+                latteOption.click();
             }, delay: 2500 },
-            { action: selectCoffee, delay: 3000 },
-            { action: startBrewing, delay: 3500 },
-            { action: collectCoffee, delay: 6000 }
+            { action: () => handleCupClick(), delay: 6000 }
         ];
         
         let stepIndex = 0;

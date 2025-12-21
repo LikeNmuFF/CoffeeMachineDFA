@@ -47,7 +47,7 @@
                 </div>
                 
                 <!-- Coffee Cup -->
-                <div class="coffee-cup" id="coffeeCup">
+                <div class="coffee-cup" id="coffeeCup" onclick="handleCupClick()" style="cursor: pointer;" title="Click to collect coffee when ready">
                     <div class="coffee-liquid" id="coffeeLiquid" style="height: 0%"></div>
                     <div class="steam" id="steamEffect"></div>
                 </div>
@@ -105,22 +105,6 @@
             
             <!-- Vendo Controls -->
             <div class="controls">
-                <button class="control-btn btn-start" onclick="startProcess()" id="startBtn">
-                    <i class="fas fa-play-circle btn-icon"></i>
-                    <span>START</span>
-                </button>
-                <button class="control-btn btn-select" onclick="selectCoffee()" id="selectBtn" disabled>
-                    <i class="fas fa-check-circle btn-icon"></i>
-                    <span>SELECT</span>
-                </button>
-                <button class="control-btn btn-brew" onclick="startBrewing()" id="brewBtn" disabled>
-                    <i class="fas fa-fire btn-icon"></i>
-                    <span>BREW</span>
-                </button>
-                <button class="control-btn btn-done" onclick="collectCoffee()" id="doneBtn" disabled>
-                    <i class="fas fa-mug-hot btn-icon"></i>
-                    <span>COLLECT</span>
-                </button>
                 <button class="control-btn btn-change" onclick="returnChange()" id="changeBtn">
                     <i class="fas fa-coins btn-icon"></i>
                     <span>RETURN</span>
